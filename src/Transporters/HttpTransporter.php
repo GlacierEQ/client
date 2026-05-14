@@ -10,6 +10,7 @@ use JsonException;
 use OpenAI\Contracts\TransporterContract;
 use OpenAI\Enums\Transporter\ContentType;
 use OpenAI\Exceptions\ErrorException;
+use OpenAI\Exceptions\ResponseClientException;
 use OpenAI\Exceptions\TransporterException;
 use OpenAI\Exceptions\UnserializableResponse;
 use OpenAI\ValueObjects\Transporter\BaseUri;
@@ -92,6 +93,11 @@ final class HttpTransporter implements TransporterContract
         $response = $this->sendRequest(fn () => ($this->streamHandler)($request));
 
         $this->throwIfJsonError($response, $response);
+
+        $statusCode = $response->getStatusCode();
+        if ($statusCode >= 400 && $statusCode < 500) {
+            throw new ResponseClientException('Client error: ' . $statusCode, $request);
+        }
 
         return $response;
     }
